@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sound Waves Pro - Speaker Cleaner & Audio Tools</title>
+  <style>
+    :root {
+      --bg-color: #0b1329;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --danger-color: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 20px;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.8rem;
+      cursor: pointer;
+    }
+
+    /* Side Navigation Drawer */
+    .side-drawer {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100%;
+      background-color: var(--card-bg);
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      transition: left 0.3s ease;
+      padding: 25px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .side-drawer.open {
+      left: 0;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 15px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .drawer-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .drawer-menu a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 1rem;
+      display: block;
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+
+    .drawer-menu a:hover {
+      color: var(--accent-color);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 90;
+      display: none;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    /* Main Container */
+    main {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    /* Eject Button Container */
+    .eject-button-container {
+      position: relative;
+      margin: 15px 0;
+    }
+
+    .eject-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border: none;
+      border-radius: 50%;
+      width: 150px;
+      height: 150px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(2, 132, 199, 0.4);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.1s ease, background 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .eject-btn:active {
+      transform: scale(0.96);
+    }
+
+    .eject-btn .icons {
+      font-size: 2.2rem;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 50%;
+      border: 3px solid var(--accent-color);
+      opacity: 0;
+      z-index: 1;
+    }
+
+    .playing .pulse-ring {
+      animation: pulse 1.2s infinite ease-out;
+    }
+
+    .playing .eject-btn {
+      background: linear-gradient(135deg, var(--danger-color), #be123c);
+      box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    /* Control Panel Cards */
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      text-align: center;
+    }
+
+    .timer-display {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    /* Controls Grid */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-color);
+      cursor: pointer;
+    }
+
+    .mode-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mode-btn {
+      background-color: #334155;
+      border: 1px solid #475569;
+      color: var(--text-main);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .mode-btn.active {
+      background-color: var(--accent-color);
+      border-color: var(--accent-hover);
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* Content Cards */
+    .card h3 {
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .card ul {
+      list-style-position: inside;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .faq-item {
+      margin-top: 6px;
+    }
+
+    .faq-item h4 {
+      font-size: 0.85rem;
+      color: var(--accent-color);
+    }
+
+    .faq-item p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Side Navigation Drawer -->
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+  <div class="side-drawer" id="sideDrawer">
+    <div class="drawer-header">
+      <div class="logo">🔊 Fix My Speakers</div>
+      <button class="close-btn" onclick="toggleMenu()">&times;</button>
+    </div>
+    <ul class="drawer-menu">
+      <li><strong>Tools</strong></li>
+      <li><a href="#" onclick="selectMode('165'); toggleMenu();">🔊 Speaker Cleaner (165 Hz)</a></li>
+      <li><a href="#" onclick="selectMode('sweep'); toggleMenu();">🌊 Deep Frequency Sweep</a></li>
+      <li><a href="#" onclick="toggleMenu();">🎛️ Tone Generator</a></li>
+      <li style="margin-top: 10px;"><strong>Information</strong></li>
+      <li><a href="#faq" onclick="toggleMenu();">❓ FAQ</a></li>
+      <li><a href="#instructions" onclick="toggleMenu();">📋 Best Practices</a></li>
+    </ul>
+  </div>
+
+  <!-- Header Bar -->
+  <header>
+    <div class="logo">🔊 Fix My Speakers</div>
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+  </header>
+
+  <main>
+    <div>
+      <h1>Water Ejector Utility</h1>
+      <p class="subtitle">Select a mode or press start to clear water out of your device using sound wave vibrations.</p>
+    </div>
+
+    <!-- Interactive Eject Button -->
+    <div class="eject-button-container" id="buttonContainer">
+      <div class="pulse-ring"></div>
+      <button class="eject-btn" id="toggleBtn" onclick="toggleAudio()">
+        <span class="icons">💨 💦</span>
+      </button>
+    </div>
+
+    <!-- Status & Timer Panel -->
+    <div class="card">
+      <div class="status-text" id="statusLabel">Ready to clean</div>
+      <div class="timer-display" id="timerDisplay">00:30</div>
+    </div>
+
+    <!-- Audio Settings Panel -->
+    <div class="card">
+      <h3>Audio Frequency Controls</h3>
+      <div class="controls-grid">
+        <div class="label-row">
+          <span>Target Frequency</span>
+          <span id="freqLabel">165 Hz</span>
+        </div>
+        <input type="range" id="freqSlider" min="50" max="1000" value="165" oninput="updateFrequency(this.value)">
+        
+        <div class="label-row" style="margin-top: 6px;">
+          <span>Preset Modes</span>
+        </div>
+        <div class="mode-buttons">
+          <button class="mode-btn active" id="btn-165" onclick="setPreset(165)">165 Hz Standard</button>
+          <button class="mode-btn" id="btn-250" onclick="setPreset(250)">250 Hz High</button>
+          <button class="mode-btn" id="btn-sweep" onclick="setPreset('sweep')">Sweep Mode</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Panel -->
+    <div class="card" id="instructions">
+      <h3>Best Practices</h3>
+      <ul>
+        <li>Turn device volume up to 100%.</li>
+        <li>Position device screen-up or slightly angled downward.</li>
+        <li>Let the 30-second timer run completely, repeat if necessary.</li>
+      </ul>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="card" id="faq">
+      <h3>Frequently Asked Questions</h3>
+      <div class="faq-item">
+        <h4>How does sound eject water?</h4>
+        <p>Specific high-frequency sound waves cause the internal speaker diaphragm to vibrate rapidly, pushing out trapped liquid droplets.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Is this tone safe for my device?</h4>
+        <p>Yes, standard audio frequencies produced within safe device output levels do not harm internal components.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+    let isPlaying = false;
+    let currentFreq = 165;
+    let isSweepMode = false;
+    let sweepInterval = null;
+    
+    // Timer variables
+    let countdown = 30;
+    let timerInterval = null;
+
+    function toggleMenu() {
+      document.getElementById('sideDrawer').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function initAudio() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+
+      oscillator = audioCtx.createOscillator();
+      gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(currentFreq, audioCtx.currentTime);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+    }
+
+    function toggleAudio() {
+      if (!isPlaying) {
+        startAudio();
+      } else {
+        stopAudio();
+      }
+    }
+
+    function startAudio() {
+      const container = document.getElementById('buttonContainer');
+      const statusLabel = document.getElementById('statusLabel');
+
+      if (!audioCtx) {
+        initAudio();
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+      container.classList.add('playing');
+      isPlaying = true;
+
+      if (isSweepMode) {
+        statusLabel.innerText = 'Sweeping frequencies active...';
+        startSweep();
+      } else {
+        statusLabel.innerText = `Ejecting water at ${currentFreq} Hz...`;
+      }
+
+      startTimer();
+    }
+
+    function stopAudio() {
+      const container = document.getElementById('buttonContainer');
+      const statusLabel = document.getElementById('statusLabel');
+
+      if (gainNode) {
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      }
+
+      container.classList.remove('playing');
+      statusLabel.innerText = 'Audio stopped. Tap button to restart.';
+      isPlaying = false;
+
+      stopSweep();
+      resetTimer();
+    }
+
+    function updateFrequency(val) {
+      currentFreq = val;
+      document.getElementById('freqLabel').innerText = val + ' Hz';
+      isSweepMode = false;
+      clearModeButtons();
+
+      if (oscillator && isPlaying) {
+        oscillator.frequency.setValueAtTime(val, audioCtx.currentTime);
+        document.getElementById('statusLabel').innerText = `Ejecting water at ${val} Hz...`;
+      }
+    }
+
+    function setPreset(mode) {
+      clearModeButtons();
+      stopSweep();
+
+      if (mode === 'sweep') {
+        isSweepMode = true;
+        document.getElementById('btn-sweep').classList.add('active');
+        document.getElementById('freqLabel').innerText = 'Sweep (100–300 Hz)';
+        if (isPlaying) startSweep();
+      } else {
+        isSweepMode = false;
+        currentFreq = mode;
+        document.getElementById('freqSlider').value = mode;
+        document.getElementById('freqLabel').innerText = mode + ' Hz';
+        document.getElementById(`btn-${mode}`).classList.add('active');
+        if (oscillator && isPlaying) {
+          oscillator.frequency.setValueAtTime(mode, audioCtx.currentTime);
+        }
+      }
+    }
+
+    function clearModeButtons() {
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    }
+
+    function startSweep() {
+      let sweepFreq = 100;
+      let direction = 1;
+      
+      sweepInterval = setInterval(() => {
+        if (!isPlaying) return;
+        sweepFreq += direction * 5;
+        if (sweepFreq >= 300) direction = -1;
+        if (sweepFreq <= 100) direction = 1;
+        
+        if (oscillator) {
+          oscillator.frequency.setValueAtTime(sweepFreq, audioCtx.currentTime);
+        }
+      }, 50);
+    }
+
+    function stopSweep() {
+      if (sweepInterval) clearInterval(sweepInterval);
+    }
+
+    function startTimer() {
+      countdown = 30;
+      updateTimerDisplay();
+      
+      timerInterval = setInterval(() => {
+        countdown--;
+        updateTimerDisplay();
+
+        if (countdown <= 0) {
+          stopAudio();
+          document.getElementById('statusLabel').innerText = 'Ejection cycle complete!';
+        }
+      }, 1000);
+    }
+
+    function resetTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      countdown = 30;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const secs = countdown < 10 ? `0${countdown}` : countdown;
+      document.getElementById('timerDisplay').innerText = `00:${secs}`;
+    }
+  </script>
+</body>
+</html>
